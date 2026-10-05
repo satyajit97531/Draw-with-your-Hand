@@ -1,0 +1,6 @@
+{
+  "name": "AuraHand AR - Hand Scanning & Spatial Air Canvas",
+  "description": "Real-time augmented reality hand scanning, air drawing, and spatial camera tool interaction.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
