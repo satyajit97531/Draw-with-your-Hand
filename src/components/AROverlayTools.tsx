@@ -24,6 +24,8 @@ import {
   SlidersHorizontal,
   X,
   Zap,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { DrawingToolType, Point2D } from '../types/ar';
 import { sounds } from '../utils/sound';
@@ -119,6 +121,8 @@ export const AROverlayTools: React.FC<AROverlayToolsProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Mobile Bottom Tab (tools, colors, settings)
   const [mobileTab, setMobileTab] = useState<'tools' | 'colors' | 'sizes'>('tools');
+  // Mobile Bottom Dock minimize toggle
+  const [mobileDockMinimized, setMobileDockMinimized] = useState<boolean>(false);
 
   // Elements registered for Air Dwell & Pinch collision
   const registeredTargetsRef = useRef<Map<string, { rect: DOMRect; onTrigger: () => void }>>(new Map());
@@ -207,7 +211,7 @@ export const AROverlayTools: React.FC<AROverlayToolsProps> = ({
   };
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-2 sm:p-4 md:p-5 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-2 sm:p-4 md:p-5 overflow-hidden pt-[max(0.5rem,env(safe-area-inset-top,8px))] pb-[max(0.75rem,env(safe-area-inset-bottom,12px))]">
       {/* 1. TOP RESPONSIVE HEADER BAR */}
       <div className="flex items-center justify-between gap-1.5 sm:gap-2">
         {/* Brand identity */}
@@ -596,174 +600,201 @@ export const AROverlayTools: React.FC<AROverlayToolsProps> = ({
       </div>
 
       {/* 3. MOBILE ADAPTIVE BOTTOM CONTROLS (< md) */}
-      <div className="md:hidden pointer-events-auto flex flex-col gap-2 w-full mt-auto">
-        {/* Mobile Tabbed Strip */}
-        <div className="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-xl flex flex-col gap-2">
-          {/* Segmented Switcher */}
-          <div className="flex items-center justify-between border-b border-white/10 pb-1.5 px-1">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => {
-                  sounds.playHover();
-                  setMobileTab('tools');
-                }}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  mobileTab === 'tools'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Brushes
-              </button>
-              <button
-                onClick={() => {
-                  sounds.playHover();
-                  setMobileTab('colors');
-                }}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  mobileTab === 'colors'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Colors
-              </button>
-              <button
-                onClick={() => {
-                  sounds.playHover();
-                  setMobileTab('sizes');
-                }}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  mobileTab === 'sizes'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Size & Stamps
-              </button>
-            </div>
-
-            {/* Gesture state pill */}
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-300">
-              <span className={`w-1.5 h-1.5 rounded-full ${isPinching ? 'bg-emerald-400 animate-ping' : 'bg-cyan-400'}`} />
-              <span>{isPinching ? 'DRAW' : 'HOVER'}</span>
-            </div>
-          </div>
-
-          {/* Tab 1: Tools Horizontal Row */}
-          {mobileTab === 'tools' && (
-            <div className="flex items-center justify-between gap-1 overflow-x-auto py-0.5 no-scrollbar">
-              {TOOLS_CONFIG.map((t) => {
-                const isSelected = currentTool === t.id;
-                const isHovered = hoveredTargetId === `mob-tool-${t.id}`;
-                return (
-                  <button
-                    key={t.id}
-                    ref={registerTarget(`mob-tool-${t.id}`, () => onSelectTool(t.id))}
-                    onClick={() => {
-                      sounds.playSelect();
-                      onSelectTool(t.id);
-                    }}
-                    className={`relative p-2 rounded-xl transition-all shrink-0 flex flex-col items-center gap-1 min-w-[44px] ${
-                      isSelected
-                        ? 'bg-cyan-500 text-slate-950 font-bold shadow-md'
-                        : 'glass-button text-slate-300'
-                    }`}
-                  >
-                    {isHovered && (
-                      <div className="absolute inset-0 rounded-xl border border-cyan-400" />
-                    )}
-                    {t.id === 'stamp' ? (
-                      <span className="text-sm leading-none block">{currentStamp}</span>
-                    ) : (
-                      t.icon
-                    )}
-                    <span className="text-[8.5px] font-mono uppercase truncate max-w-[44px]">
-                      {t.id}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Tab 2: Colors Horizontal Row */}
-          {mobileTab === 'colors' && (
-            <div className="flex items-center justify-between gap-2 overflow-x-auto py-1">
-              {COLORS.map((col) => {
-                const isSelected = currentColor === col.id;
-                const isHovered = hoveredTargetId === `mob-col-${col.id}`;
-                return (
-                  <button
-                    key={col.id}
-                    ref={registerTarget(`mob-col-${col.id}`, () => onSelectColor(col.id))}
-                    onClick={() => {
-                      sounds.playSelect();
-                      onSelectColor(col.id);
-                    }}
-                    className={`relative w-8 h-8 rounded-full ${col.bg} transition-all duration-200 shrink-0 flex items-center justify-center ${
-                      isSelected
-                        ? 'ring-4 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg'
-                        : 'opacity-85'
-                    }`}
-                  >
-                    {isHovered && (
-                      <div className="absolute -inset-1 rounded-full border border-cyan-400" />
-                    )}
-                    {isSelected && (
-                      <span className="w-2 h-2 rounded-full bg-slate-950 shadow-inner" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Tab 3: Sizes & Stamps */}
-          {mobileTab === 'sizes' && (
-            <div className="flex items-center justify-between gap-2 py-0.5">
-              <div className="flex items-center gap-1.5">
-                {SIZES.map((s) => (
-                  <button
-                    key={s.size}
-                    ref={registerTarget(`mob-size-${s.size}`, () => onSelectSize(s.size))}
-                    onClick={() => {
-                      sounds.playSelect();
-                      onSelectSize(s.size);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
-                      currentSize === s.size
-                        ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400 font-semibold'
-                        : 'text-slate-400 hover:text-white glass-button'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-
+      <div className="md:hidden pointer-events-auto flex flex-col gap-1 w-full max-w-sm sm:max-w-md mx-auto mt-auto mb-1">
+        {mobileDockMinimized ? (
+          <button
+            onClick={() => {
+              sounds.playSelect();
+              setMobileDockMinimized(false);
+            }}
+            className="glass-panel px-3.5 py-1.5 rounded-full border border-cyan-500/30 text-xs font-medium text-cyan-300 flex items-center gap-2 shadow-xl mx-auto active:scale-95 transition-all"
+          >
+            <Palette className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Tools & Colors</span>
+            <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+          </button>
+        ) : (
+          <div className="glass-panel p-2 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-xl flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+            {/* Segmented Switcher & Minimize Button */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5 px-0.5">
               <div className="flex items-center gap-1">
-                {STAMPS.slice(0, 4).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => {
-                      sounds.playSelect();
-                      onSelectStamp(st);
-                      onSelectTool('stamp');
-                    }}
-                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-all ${
-                      currentTool === 'stamp' && currentStamp === st
-                        ? 'bg-rose-500/30 ring-1 ring-rose-400'
-                        : 'glass-button'
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
+                <button
+                  onClick={() => {
+                    sounds.playHover();
+                    setMobileTab('tools');
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    mobileTab === 'tools'
+                      ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/40 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Brushes
+                </button>
+                <button
+                  onClick={() => {
+                    sounds.playHover();
+                    setMobileTab('colors');
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    mobileTab === 'colors'
+                      ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/40 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Colors
+                </button>
+                <button
+                  onClick={() => {
+                    sounds.playHover();
+                    setMobileTab('sizes');
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    mobileTab === 'sizes'
+                      ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/40 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Sizes
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Gesture state indicator */}
+                <div className="flex items-center gap-1.5 text-[9.5px] font-mono text-cyan-300">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isPinching ? 'bg-emerald-400 animate-ping' : 'bg-cyan-400'}`} />
+                  <span className="hidden xs:inline">{isPinching ? 'DRAW' : 'HOVER'}</span>
+                </div>
+
+                {/* Minimize dock button */}
+                <button
+                  onClick={() => {
+                    sounds.playHover();
+                    setMobileDockMinimized(true);
+                  }}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  title="Minimize Bottom Bar"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Tab 1: Tools Horizontal Row */}
+            {mobileTab === 'tools' && (
+              <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 px-0.5 no-scrollbar scroll-smooth">
+                {TOOLS_CONFIG.map((t) => {
+                  const isSelected = currentTool === t.id;
+                  const isHovered = hoveredTargetId === `mob-tool-${t.id}`;
+                  return (
+                    <button
+                      key={t.id}
+                      ref={registerTarget(`mob-tool-${t.id}`, () => onSelectTool(t.id))}
+                      onClick={() => {
+                        sounds.playSelect();
+                        onSelectTool(t.id);
+                      }}
+                      className={`relative px-2 py-1.5 rounded-xl transition-all shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[46px] h-12 ${
+                        isSelected
+                          ? 'bg-cyan-500 text-slate-950 font-bold shadow-md'
+                          : 'glass-button text-slate-300'
+                      }`}
+                    >
+                      {isHovered && (
+                        <div className="absolute inset-0 rounded-xl border border-cyan-400" />
+                      )}
+                      {t.id === 'stamp' ? (
+                        <span className="text-base leading-none block">{currentStamp}</span>
+                      ) : (
+                        t.icon
+                      )}
+                      <span className="text-[8px] font-mono uppercase tracking-tight truncate max-w-[44px]">
+                        {t.id}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Tab 2: Colors Horizontal Row */}
+            {mobileTab === 'colors' && (
+              <div className="flex items-center justify-between gap-1.5 overflow-x-auto py-1 px-1 no-scrollbar scroll-smooth">
+                {COLORS.map((col) => {
+                  const isSelected = currentColor === col.id;
+                  const isHovered = hoveredTargetId === `mob-col-${col.id}`;
+                  return (
+                    <button
+                      key={col.id}
+                      ref={registerTarget(`mob-col-${col.id}`, () => onSelectColor(col.id))}
+                      onClick={() => {
+                        sounds.playSelect();
+                        onSelectColor(col.id);
+                      }}
+                      className={`relative w-8 h-8 rounded-full ${col.bg} transition-all duration-200 shrink-0 flex items-center justify-center ${
+                        isSelected
+                          ? 'ring-4 ring-offset-2 ring-offset-slate-950 scale-110 shadow-lg'
+                          : 'opacity-85 hover:opacity-100'
+                      }`}
+                    >
+                      {isHovered && (
+                        <div className="absolute -inset-1 rounded-full border border-cyan-400" />
+                      )}
+                      {isSelected && (
+                        <span className="w-2 h-2 rounded-full bg-slate-950 shadow-inner" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Tab 3: Sizes & Stamps */}
+            {mobileTab === 'sizes' && (
+              <div className="flex items-center justify-between gap-2 py-0.5 px-0.5">
+                <div className="flex items-center gap-1.5">
+                  {SIZES.map((s) => (
+                    <button
+                      key={s.size}
+                      ref={registerTarget(`mob-size-${s.size}`, () => onSelectSize(s.size))}
+                      onClick={() => {
+                        sounds.playSelect();
+                        onSelectSize(s.size);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
+                        currentSize === s.size
+                          ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-400 font-semibold'
+                          : 'text-slate-400 hover:text-white glass-button'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                  {STAMPS.map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => {
+                        sounds.playSelect();
+                        onSelectStamp(st);
+                        onSelectTool('stamp');
+                      }}
+                      className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-sm transition-all ${
+                        currentTool === 'stamp' && currentStamp === st
+                          ? 'bg-rose-500/30 ring-1 ring-rose-400'
+                          : 'glass-button'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 4. DESKTOP BOTTOM BAR (Visible on md+) */}

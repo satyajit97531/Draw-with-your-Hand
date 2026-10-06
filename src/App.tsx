@@ -102,7 +102,7 @@ export default function App() {
   }, [soundEnabled]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-950 select-none">
+    <div className="relative w-full h-full h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-950 select-none">
       {/* Augmented Reality Canvas & Webcam Layer */}
       <ARCanvas
         currentTool={currentTool}
